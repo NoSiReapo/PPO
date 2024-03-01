@@ -1,0 +1,56 @@
+@startuml Parking Service Web App. Диаграмма infrastructure
+' C4
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+'
+title "Parking Service Web App. Диаграмма infrastructure"
+' Сделать развёртку на серверах яндекса(проще получать к карте запросы и т.д.)
+'
+System(trading_frontend_instance, "Frontend")
+System(trading_api_gateway, "API Gateway")
+
+
+
+package "Kubernetes k8s Cluster" {  
+    ' Balancer
+    System(trading_backend_load_balancer, "load balancer", "Kubernets External Load Balancer - Nginx (Linux)", "")
+
+    ' Node (Kubernets)
+    Deployment_Node(trading_backend_instance_1, "Backend instance 1", "k8s node on bare metal")
+    Deployment_Node(trading_backend_instance_2, "Backend instance 2", "k8s node on bare metal")
+    Deployment_Node(trading_backend_instance_N, "Backend instance N", "k8s node on bare metal")    
+}
+
+
+' Queue
+package "Kafka Apache cluster" { 
+    System(trading_message_queue, "Message queue", "Kafka Server (Linux)")
+}
+
+package "Kubernetes DB cluster" { 
+    ' Db Balancer
+    System(trading_db_load_balancer, "Database load balancer", "Pgpool-II (Linux)")
+
+    ' db node
+    Deployment_Node(trading_db_instance_1, "Database instance 1", "PostgreSQL (Linux)")
+    Deployment_Node(trading_db_instance_2, "Database instance 2", "PostgreSQL (Linux)")
+    Deployment_Node(trading_db_instance_N, "Database instance N", "PostgreSQL (Linux)")
+}
+
+' referenses
+trading_frontend_instance --> trading_api_gateway : "HTTP"
+trading_api_gateway --> trading_backend_load_balancer : "HTTP"
+trading_backend_load_balancer --> trading_backend_instance_1 : "HTTP"
+trading_backend_load_balancer --> trading_backend_instance_2 : "HTTP"
+trading_backend_load_balancer --> trading_backend_instance_N : "HTTP"
+trading_backend_instance_1 --> trading_message_queue : "TCP"
+trading_backend_instance_2 --> trading_message_queue : "TCP"
+trading_backend_instance_N --> trading_message_queue : "TCP"
+trading_backend_instance_1 --> trading_db_load_balancer : "TCP/IP"
+trading_backend_instance_2 --> trading_db_load_balancer : "TCP/IP"
+trading_backend_instance_N --> trading_db_load_balancer : "TCP/IP"
+trading_db_load_balancer --> trading_db_instance_1 : "TCP/IP"
+trading_db_load_balancer --> trading_db_instance_2 : "TCP/IP"
+trading_db_load_balancer --> trading_db_instance_N : "TCP/IP"
+
+@enduml

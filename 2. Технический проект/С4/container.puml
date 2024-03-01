@@ -1,0 +1,85 @@
+@startuml Energy Consumption Accounting System Web App. Диаграмма контейнеров (пользователи)
+
+' C4
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include DEVICONS/php.puml
+!include DEVICONS/python.puml
+
+LAYOUT_WITH_LEGEND()
+' limit text width
+skinparam wrapWidth 250
+skinparam wrapMessageWidth 200
+
+'
+title "Energy Consumption Accounting System Web App. Диаграмма контейнеров"
+
+
+' Personas 
+Person(driverUser, "Водитель", "Поиск парковок, поиск маршрута, аренда места.")
+Person(adminUser, "Администратор системы", "Подтверждение изменения информации.")
+Person(operatorUser, "Оператор", "Техподдержка, манипулирование информацией пользователей и парковок.")
+Person(ownerUser, "Владелец парковки", "Мониторинг и анализ статистики посещений и прибыли парковки.")
+    
+
+' System
+System_Boundary(systemRecipe, "Веб-приложение для поиска и бронирования парковочных мест") {
+ 
+    ' Client Apps
+    Container(webApplication, "Web Application", "ReactJS", "Веб интерфейс для простых пользователей")
+        ownerUser --> webApplication: "Посещает"
+        driverUser --> webApplication: "Посещает"
+
+
+    Container(webApplicationCompany, "Web Application", "ReactJS", "Веб интерфейс для управляющих приложением")
+        adminUser --> webApplicationCompany: "Посещает"
+        operatorUser --> webApplicationCompany: "Посещает"
+
+    ' base Services
+    Container(apiGateway, "API Gateway", "GO", "Управляет запросами")
+        webApplication -down-> apiGateway: "Использует\n [HTTPS]"
+        webApplicationCompany -down-> apiGateway: "Использует\n [HTTPS]"
+
+    Container(dataProcessService, "Data Process Service", "GO", "Отвечает за предоставление данных и их обработку (мониторинг, анализ)")     
+    ContainerDb(db_dataProcessService, "Database", "PostgreSQL", "Хранит данные по парковкам")    
+        dataProcessService -down-> db_dataProcessService: "Чтение/запись\n [SQL/TCP]"
+
+    Container(deviceMonitoringService, "Device Monitoring Service", "PHP", "Работа с парковками") 
+    ContainerDb(db_interactionsWithPartnersService_device, "Database", "PostgreSQL", "Хранит данные по посещениям, отчётам, рейтингу, ценам")    
+        deviceMonitoringService -right-> db_interactionsWithPartnersService_device: "Чтение/запись\n [SQL/TCP]"
+        deviceMonitoringService -up-> dataProcessService: "Отправка/получение данных\n [JSON/HTTPS]"
+
+    Container(userAccessControlService, "User Access Control Service", "PHP", "Отвечает за работу с пользователями (авторизация, регистрация, контроль доступа)")  
+    ContainerDb(db_userAccessControlService, "Database", "PostgreSQL", "Хранит данные о пользователях")
+        userAccessControlService -up-> db_userAccessControlService: "Чтение/запись\n [SQL/TCP]"
+    
+    Container(interactionsWithPartnersService, "Interactions With Partners Service", "PHP", "Отвечает за взаимодействие с внешними сервисами карт и оплаты") 
+    Container(techSupportService, "Interaction With Users", "PHP", "Отвечает за обращение пользователей в техподдержку")
+    ContainerDb(db_techSupportService, "Database", "PostgreSQL", "Хранит историю обращений и информацию об инциденте")
+        techSupportService -down-> db_techSupportService: "Чтение/запись\n [SQL/TCP]"
+    Container(notificationService, "Notification Service", "PHP", "Отвечает за уведомление пользователей")
+        notificationService -left-> ownerUser: "Отправка push уведомлений\n [JSON/HTTPS]"
+        notificationService -left-> driverUser: "Отправка push уведомлений\n [JSON/HTTPS]"
+        deviceMonitoringService -left-> notificationService: "Отправка уведомлений\n [JSON/HTTPS]"
+    Container(communicateWithUser, "Communication Service", "PHP", "Реализует поток сообщений пользователей")
+    ContainerDb(db_communicateWithUser, "Database", "PostgreSQL", "Хранение истории сообщений пользователей")
+        communicateWithUser -down-> db_communicateWithUser: "Чтение/запись\n [SQL/TCP]"
+        techSupportService -left-> communicateWithUser: "Взаимодейтсвие в качестве сервиса посредника перед запросом\n [JSON/HTTPS]"
+    deviceMonitoringService -down-> interactionsWithPartnersService: "Получение/отправка данных\n [JSON/HTTPS]"
+    'from Gateway
+    apiGateway -left-> dataProcessService: "Api запрос\n [JSON/HTTPS]"
+    apiGateway -down-> deviceMonitoringService: "Api запрос\n [JSON/HTTPS]"
+    apiGateway -right-> userAccessControlService: "Api запрос\n [JSON/HTTPS]"
+    apiGateway -left-> techSupportService: "Api запрос\n [JSON/HTTPS]"
+    apiGateway -left-> communicateWithUser: "Api запрос\n [JSON/HTTPS]"
+    
+
+}
+
+'External Services
+System_Ext(extPayCheck, "Проверка совершения платёжных услуг", "Проверка подтверждения оплаты.")
+System_Ext(extMap, "Получение карты и местоположения",  "Построение маршрута.")
+    interactionsWithPartnersService -right-> extPayCheck: "Отправка/получение\n [JSON/HTTPS]"
+    interactionsWithPartnersService -right-> extMap: "Отправка/получение\n [JSON/HTTPS]"
+
+@enduml

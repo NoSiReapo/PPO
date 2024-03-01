@@ -1,0 +1,31 @@
+@startuml Parking Service Web App. Диаграмма контекста
+
+' C4
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+
+' limit text width
+skinparam wrapWidth 250
+skinparam wrapMessageWidth 200
+
+'
+title "Parking Service Web App. Диаграмма контекста"
+
+' Personas 
+Person(driverUser, "Водитель", "Поиск парковок, поиск маршрута, аренда места.")
+Person(adminUser, "Администратор системы", "Подтверждение изменения информации.")
+Person(operatorUser, "Оператор", "Техподдержка, манипулирование информацией пользователей и парковок.")
+Person(ownerUser, "Владелец парковки", "Мониторинг и анализ статистики посещений и прибыли парковки.")
+
+System(mySystem, "Система Парковок", "Optional Description")
+    driverUser --> mySystem: ""
+    adminUser --> mySystem: ""
+    operatorUser --> mySystem: ""
+    ownerUser --> mySystem: ""
+
+' External System
+System_Ext(extPayCheck, "Проверка совершения платёжных услуг", "Проверка подтверждения оплаты.")
+System_Ext(extMap, "Получение карты и местоположения",  "Построение маршрута.")
+    mySystem ---> extPayCheck : ""
+    mySystem ---> extMap : ""
+@enduml

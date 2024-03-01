@@ -1,0 +1,79 @@
+@startuml Parking Service Web App. Диаграмма компонента
+
+' C4
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include DEVICONS/php.puml
+!include DEVICONS/python.puml
+
+LAYOUT_WITH_LEGEND()
+' limit text width
+skinparam wrapWidth 250
+skinparam wrapMessageWidth 200
+
+'
+title "Parking Service Web App. Диаграмма компонента"
+
+
+' Client Apps
+Container(webApplication, "Web Application", "ReactJS", "Веб интерфейс для простых пользователей")
+Container(webApplicationCompany, "Web Application", "ReactJS", "Веб интерфейс для управляющих приложением")
+
+' Gateway Services
+Container(apiGateway, "API Gateway", "GO", "Управляет запросами")
+
+' Servise
+System_Boundary(deviceMonitoringService, "Device Monitoring Service") {
+    ' Api controller class (use all in)
+    Container_Boundary(apiProcessingUnit, "apiProcessingUnit") {
+        Container(apiDataController, "apiDataController", "Web API Controller", "обрабатывает HTTP запросы, извлекает параметры")
+        ' Kafka controller class (use all in)
+        Container_Boundary(partnerController, "partnerController") {
+            Container(dataPayController, "dataPayController", "PHP", "сопровождение(переадресация запросов, выделение данных) процесса оплаты")
+            Container(dataMapController, "dataMapController", "PHP", "сопровождение(переадресация запросов, выделение данных) процесса поездки")
+
+        }
+        Container(dataProcessController, "dataProcessController", "PHP", "Получение аналитических данных парковок")
+        Container(dataNotificationSender, "dataNotificationSender", "PHP", "Отправка уведомлений через переадресацию запроса")
+    }
+
+    ' Work with data class (use all in)
+    Container_Boundary(dataProcessUnit, "dataProcessingUnit") {
+        ' Save, Read, Owerride, Write ...
+        Container(dataManapulatingComponent, "dataManapulatingComponent", "", "управление данными: созранение/чтение/перезапись... ")
+        Container(dataFlowController, "dataFlowController", "PHP", "управление потоками данных ")
+    }
+
+    ' Work with db class (use all in)
+    Container(dbInteractingComponent, "dbInteractingComponent", "", "взаимодействие с базой данных")
+}
+
+' bd component
+ContainerDb(db, "Database", "container: PostgreSQL Schema", "Хранит основные данные по парковкам") 
+
+Container(interactionsWithPartnersService, "Interactions With Partners Service", "PHP", "Отвечает за взаимодействие с внешними сервисами карт и оплаты") 
+Container(notificationService, "Notification Service", "PHP", "Отвечает за уведомление пользователей")
+Container(dataProcessService, "Data Process Service", "GO", "Отвечает за предоставление данных и их обработку (мониторинг, анализ)")     
+' References
+' controller
+dataMapController -down-> interactionsWithPartnersService: "Api запросы\n [JSON/HTTPS]"
+dataPayController ---> interactionsWithPartnersService: "Api запросы \n [JSON/HTTPS]"
+dataProcessController -left-> dataProcessService: "Отправка\получение данных\n [JSON/HTTPS]"
+dataNotificationSender -left-> notificationService: "Отправка данных\n [JSON/HTTPS]"
+
+
+' apiGateway
+webApplication --> apiGateway : "Использует\n [HTTPS]"
+webApplicationCompany --> apiGateway : "Использует\n [HTTPS]"
+apiGateway --> apiDataController : "Использует\n [HTTPS]"
+
+' apiProcessingUnit
+apiProcessingUnit -down-> dataProcessUnit : "Uses"
+apiDataController --> dataFlowController: "Uses"
+
+' bdInteractingComponent
+dataManapulatingComponent -down-> dbInteractingComponent : "Uses"
+
+
+' db
+dbInteractingComponent -down-> db : "чтение/запись"
