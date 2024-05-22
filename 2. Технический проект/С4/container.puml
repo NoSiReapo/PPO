@@ -54,6 +54,8 @@ System_Boundary(systemRecipe, "Веб-приложение для поиска �
         userAccessControlService -up-> db_userAccessControlService: "Чтение/запись\n [SQL/TCP]"
     
     Container(interactionsWithPartnersService, "Interactions With Partners Service", "PHP", "Отвечает за взаимодействие с внешними сервисами карт и оплаты") 
+    ContainerDb(db_interactionsWithPartnersService, "Database", "PostgreSQL", "Хранит информацию о покупках, чеках, заказах")
+        interactionsWithPartnersService -left-> db_interactionsWithPartnersService: "Чтение\запись\n [SQL/TCP]"
     Container(techSupportService, "Interaction With Users", "PHP", "Отвечает за обращение пользователей в техподдержку")
     ContainerDb(db_techSupportService, "Database", "PostgreSQL", "Хранит историю обращений и информацию об инциденте")
         techSupportService -down-> db_techSupportService: "Чтение/запись\n [SQL/TCP]"
