@@ -12,7 +12,7 @@ skinparam wrapWidth 250
 skinparam wrapMessageWidth 200
 
 '
-title "Energy Consumption Accounting System Web App. Диаграмма контейнеров"
+title "Parking Service Web App. Диаграмма контейнеров"
 
 
 ' Personas 
