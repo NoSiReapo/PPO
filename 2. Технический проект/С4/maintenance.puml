@@ -29,7 +29,7 @@ package "Kubernetes Cluster" {
     [Controller]
     [Node/Pode/Container] 
 }
-[Controller] --> [Node/Pode/Container]: "deplov" 
+[Controller] --> [Node/Pode/Container]: "deploy" 
 [CD] --> [Controller]: "deploy" 
 
 package "External Services" {
